@@ -9,6 +9,7 @@ import { URI, UriComponents } from '../../../base/common/uri.js';
 import { MessageBoxOptions, MessageBoxReturnValue, OpenDevToolsOptions, OpenDialogOptions, OpenDialogReturnValue, SaveDialogOptions, SaveDialogReturnValue } from '../../../base/parts/sandbox/common/electronTypes.js';
 import { ISerializableCommandAction } from '../../action/common/action.js';
 import { INativeOpenDialogOptions } from '../../dialogs/common/dialogs.js';
+import { IResolvedExternalEditor } from '../../externalEditor/common/externalEditor.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 import { IV8Profile } from '../../profiling/common/profiling.js';
 import { AuthInfo, Credentials } from '../../request/common/request.js';
@@ -179,7 +180,8 @@ export interface ICommonNativeHostService {
 	setRepresentedFilename(path: string, options?: INativeHostOptions): Promise<void>;
 	setDocumentEdited(edited: boolean, options?: INativeHostOptions): Promise<void>;
 	openExternal(url: string, defaultApplication?: string): Promise<boolean>;
-	openInRider(path: string, lineNumber?: number): Promise<boolean>;
+	getExternalEditors(): Promise<IResolvedExternalEditor[]>;
+	openInExternalEditor(toolId: string, path: string, lineNumber?: number): Promise<boolean>;
 	moveItemToTrash(fullPath: string): Promise<void>;
 
 	getMediaAccessStatus(mediaType: 'microphone' | 'camera' | 'screen'): Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>;

@@ -26,6 +26,7 @@ import { IInstantiationService } from '../../../platform/instantiation/common/in
 import { ISharedProcessService } from '../../../platform/ipc/electron-browser/services.js';
 import { NullLogService } from '../../../platform/log/common/log.js';
 import { INativeHostOptions, INativeHostService, IOSProperties, IOSStatistics, IToastOptions, IToastResult, PowerSaveBlockerType, SystemIdleState, ThermalState } from '../../../platform/native/common/native.js';
+import { IResolvedExternalEditor } from '../../../platform/externalEditor/common/externalEditor.js';
 import { IProductService } from '../../../platform/product/common/productService.js';
 import { AuthInfo, Credentials } from '../../../platform/request/common/request.js';
 import { IStorageService } from '../../../platform/storage/common/storage.js';
@@ -144,7 +145,8 @@ export class TestNativeHostService implements INativeHostService {
 	async killProcess(): Promise<void> { }
 	async setDocumentEdited(edited: boolean): Promise<void> { }
 	async openExternal(url: string, defaultApplication?: string): Promise<boolean> { return false; }
-	async openInRider(path: string, lineNumber?: number): Promise<boolean> { return false; }
+	async getExternalEditors(): Promise<IResolvedExternalEditor[]> { return []; }
+	async openInExternalEditor(toolId: string, path: string, lineNumber?: number): Promise<boolean> { return false; }
 	async updateTouchBar(): Promise<void> { }
 	async moveItemToTrash(): Promise<void> { }
 	async getMediaAccessStatus(_mediaType: 'microphone' | 'camera' | 'screen'): Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'> { return 'granted'; }

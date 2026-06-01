@@ -37,6 +37,12 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				included: isNative,
 				restricted: true
 			},
+			'workbench.externalEditor.requireCtrlModifier': {
+				type: 'boolean',
+				default: true,
+				description: localize('workbench.externalEditor.requireCtrlModifier', "Controls whether the Ctrl key must be held to open a file in the configured external editor. When disabled, matching links always open in the external editor."),
+				included: isWindows
+			},
 			'workbench.editor.titleScrollbarSizing': {
 				type: 'string',
 				enum: ['default', 'large'],

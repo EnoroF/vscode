@@ -22,6 +22,7 @@ import { findFreePort, isPortFree } from '../../../base/node/ports.js';
 import { localize } from '../../../nls.js';
 import { ISerializableCommandAction } from '../../action/common/action.js';
 import { INativeOpenDialogOptions } from '../../dialogs/common/dialogs.js';
+import { BUILTIN_EXTERNAL_EDITORS, IExternalEditorTool, IResolvedExternalEditor } from '../../externalEditor/common/externalEditor.js';
 import { IDialogMainService } from '../../dialogs/electron-main/dialogMainService.js';
 import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
 import { createDecorator, IInstantiationService } from '../../instantiation/common/instantiation.js';
@@ -652,23 +653,146 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		return true;
 	}
 
-	async openInRider(_windowId: number | undefined, path: string, lineNumber?: number): Promise<boolean> {
-		const riderPath = 'C:\\Program Files\\JetBrains\\JetBrains Rider\\bin\\rider64.exe';
-		if (!(await Promises.exists(riderPath))) {
-			this.logService.error(`Configured Rider path does not exist: ${riderPath}`);
+	async getExternalEditors(_windowId: number | undefined): Promise<IResolvedExternalEditor[]> {
+		if (!isWindows) {
+			return [];
+		}
+
+		const resolved: IResolvedExternalEditor[] = [];
+		const seenPaths = new Set<string>();
+
+		// Resolve the internally controlled list of known editors.
+		for (const tool of BUILTIN_EXTERNAL_EDITORS) {
+			const path = await this.resolveExternalEditorPath(tool);
+			if (path) {
+				seenPaths.add(path.toLowerCase());
+			}
+			resolved.push({ id: tool.id, label: tool.label, path, available: !!path, source: 'builtin' });
+		}
+
+		// Discover additional editors registered under the Windows shell
+		// "Open with" associations (HKEY_CLASSES_ROOT\Applications).
+		for (const discovered of await this.discoverShellEditors()) {
+			if (seenPaths.has(discovered.path.toLowerCase())) {
+				continue;
+			}
+			seenPaths.add(discovered.path.toLowerCase());
+			resolved.push({ id: `discovered:${discovered.exe}`, label: discovered.label, path: discovered.path, available: true, source: 'discovered' });
+		}
+
+		return resolved;
+	}
+
+	async openInExternalEditor(_windowId: number | undefined, toolId: string, path: string, lineNumber?: number): Promise<boolean> {
+		if (!isWindows) {
 			return false;
 		}
 
-		const args: string[] = [];
-		if (lineNumber !== undefined) {
-			args.push('--line', String(lineNumber));
-		}
-		args.push(path);
+		let editorPath: string | undefined;
+		let args: string[];
 
-		const child = spawn(riderPath, args, { detached: true, stdio: 'ignore' });
-		child.once('error', error => this.logService.error(`Unable to open Rider: ${error.message}`));
+		const tool = BUILTIN_EXTERNAL_EDITORS.find(candidate => candidate.id === toolId);
+		if (tool) {
+			editorPath = await this.resolveExternalEditorPath(tool);
+			args = tool.buildArgs(path, lineNumber);
+		} else {
+			// A discovered editor (id is `discovered:<exe>`); resolve it again so the
+			// path stays fresh even if the registry changed since startup.
+			const discovered = (await this.discoverShellEditors()).find(candidate => `discovered:${candidate.exe}` === toolId);
+			editorPath = discovered?.path;
+			args = [path];
+		}
+
+		if (!editorPath) {
+			this.logService.error(`Unable to resolve external editor for tool '${toolId}'`);
+			return false;
+		}
+
+		const child = spawn(editorPath, args, { detached: true, stdio: 'ignore' });
+		child.once('error', error => this.logService.error(`Unable to open external editor '${toolId}': ${error.message}`));
 		child.unref();
 		return true;
+	}
+
+	private async resolveExternalEditorPath(tool: IExternalEditorTool): Promise<string | undefined> {
+		// Prefer the Windows `App Paths` registry which records the executable
+		// location for installed applications.
+		for (const exe of tool.exeNames) {
+			const fromRegistry = await this.windowsGetStringRegKey(undefined, 'HKEY_LOCAL_MACHINE', `SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\${exe}`, '')
+				?? await this.windowsGetStringRegKey(undefined, 'HKEY_CURRENT_USER', `SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\${exe}`, '');
+			const normalized = fromRegistry?.replace(/^"|"$/g, '').trim();
+			if (normalized && await Promises.exists(normalized)) {
+				return normalized;
+			}
+		}
+
+		// Fall back to well-known installation paths.
+		for (const fallback of tool.fallbackPaths) {
+			if (await Promises.exists(fallback)) {
+				return fallback;
+			}
+		}
+
+		return undefined;
+	}
+
+	private async discoverShellEditors(): Promise<{ exe: string; label: string; path: string }[]> {
+		const editors: { exe: string; label: string; path: string }[] = [];
+		let output: string;
+		try {
+			const result = await promisify(exec)('reg query "HKEY_CLASSES_ROOT\\Applications" /s /v "" /f "open\\command" /e', { maxBuffer: 10 * 1024 * 1024 });
+			output = result.stdout;
+		} catch (error) {
+			// `reg query` exits with a non-zero code when nothing is found.
+			return editors;
+		}
+
+		const seen = new Set<string>();
+		const keyPrefix = 'HKEY_CLASSES_ROOT\\Applications\\';
+		let currentExe: string | undefined;
+		for (const rawLine of output.split(/\r?\n/)) {
+			const line = rawLine.trim();
+			if (line.startsWith(keyPrefix)) {
+				const segments = line.substring(keyPrefix.length).split('\\');
+				currentExe = segments[0]?.toLowerCase();
+				continue;
+			}
+
+			// Value lines look like: (Default)    REG_SZ    "C:\\path\\app.exe" "%1"
+			const match = /REG_(?:SZ|EXPAND_SZ)\s+(.+)$/i.exec(line);
+			if (!currentExe || !match) {
+				continue;
+			}
+
+			const command = match[1].trim();
+			const exePath = this.extractExecutablePath(command);
+			if (!exePath || seen.has(exePath.toLowerCase())) {
+				continue;
+			}
+
+			if (!(await Promises.exists(exePath))) {
+				continue;
+			}
+
+			seen.add(exePath.toLowerCase());
+			editors.push({ exe: currentExe, label: win32.basename(exePath), path: exePath });
+			currentExe = undefined;
+		}
+
+		return editors;
+	}
+
+	private extractExecutablePath(command: string): string | undefined {
+		const trimmed = command.trim();
+		if (trimmed.startsWith('"')) {
+			const end = trimmed.indexOf('"', 1);
+			return end > 1 ? trimmed.substring(1, end) : undefined;
+		}
+
+		// Unquoted command: take everything up to the first argument.
+		const firstSpace = trimmed.indexOf(' ');
+		const candidate = firstSpace === -1 ? trimmed : trimmed.substring(0, firstSpace);
+		return candidate.length > 0 ? candidate : undefined;
 	}
 
 	private async openExternalBrowser(windowId: number | undefined, url: string, defaultApplication?: string): Promise<void> {

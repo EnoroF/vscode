@@ -156,7 +156,6 @@ class LinkedMap<K, V> implements Map<K, V> {
 			[Symbol.iterator]() {
 				return iterator;
 			},
-			[Symbol.dispose]() { /* no-op */ },
 			next(): IteratorResult<K> {
 				if (map._state !== state) {
 					throw new Error(`LinkedMap got modified during iteration.`);
@@ -181,7 +180,6 @@ class LinkedMap<K, V> implements Map<K, V> {
 			[Symbol.iterator]() {
 				return iterator;
 			},
-			[Symbol.dispose]() { /* no-op */ },
 			next(): IteratorResult<V> {
 				if (map._state !== state) {
 					throw new Error(`LinkedMap got modified during iteration.`);
@@ -206,7 +204,6 @@ class LinkedMap<K, V> implements Map<K, V> {
 			[Symbol.iterator]() {
 				return iterator;
 			},
-			[Symbol.dispose]() { /* no-op */ },
 			next(): IteratorResult<[K, V]> {
 				if (map._state !== state) {
 					throw new Error(`LinkedMap got modified during iteration.`);

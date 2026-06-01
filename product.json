@@ -1,38 +1,38 @@
 {
-	"nameShort": "Code - OSS",
-	"nameLong": "Code - OSS",
-	"applicationName": "code-oss",
-	"dataFolderName": ".vscode-oss",
-	"sharedDataFolderName": ".vscode-oss-shared",
-	"win32MutexName": "vscodeoss",
-	"licenseName": "MIT",
-	"licenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
-	"serverLicenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
+	"nameShort": "Code - Insiders",
+	"nameLong": "Visual Studio Code - Insiders",
+	"applicationName": "code-insiders",
+	"dataFolderName": ".vscode-insiders",
+	"sharedDataFolderName": ".vscode-insiders-shared",
+	"win32MutexName": "vscodeinsiders",
+	"licenseName": "Multiple, see https://code.visualstudio.com/license",
+	"licenseUrl": "https://go.microsoft.com/fwlink/?LinkID=761088",
+	"serverLicenseUrl": "https://aka.ms/vscode-server-license",
 	"serverGreeting": [],
 	"serverLicense": [],
 	"serverLicensePrompt": "",
-	"serverApplicationName": "code-server-oss",
-	"serverDataFolderName": ".vscode-server-oss",
-	"tunnelApplicationName": "code-tunnel-oss",
-	"win32DirName": "Microsoft Code OSS",
-	"win32NameVersion": "Microsoft Code OSS",
-	"win32RegValueName": "CodeOSS",
-	"win32x64AppId": "{{D77B7E06-80BA-4137-BCF4-654B95CCEBC5}",
-	"win32arm64AppId": "{{D1ACE434-89C5-48D1-88D3-E2991DF85475}",
-	"win32x64UserAppId": "{{CC6B787D-37A0-49E8-AE24-8559A032BE0C}",
-	"win32arm64UserAppId": "{{3AEBF0C8-F733-4AD4-BADE-FDB816D53D7B}",
-	"win32AppUserModelId": "Microsoft.CodeOSS",
-	"win32ShellNameShort": "C&ode - OSS",
-	"win32TunnelServiceMutex": "vscodeoss-tunnelservice",
-	"win32TunnelMutex": "vscodeoss-tunnel",
-	"darwinBundleIdentifier": "com.visualstudio.code.oss",
-	"darwinProfileUUID": "47827DD9-4734-49A0-AF80-7E19B11495CC",
-	"darwinProfilePayloadUUID": "CF808BE7-53F3-46C6-A7E2-7EDB98A5E959",
-	"linuxIconName": "code-oss",
+	"serverApplicationName": "code-server-insiders",
+	"serverDataFolderName": ".vscode-server-insiders",
+	"tunnelApplicationName": "code-tunnel-insiders",
+	"win32DirName": "Microsoft VS Code Insiders",
+	"win32NameVersion": "Microsoft Visual Studio Code Insiders",
+	"win32RegValueName": "VSCodeInsiders",
+	"win32x64AppId": "{{1287CAD5-7C8D-410D-88B9-0D1EE4A83FF2}",
+	"win32arm64AppId": "{{0AEDB616-9614-463B-97D7-119DD86CCA64}",
+	"win32x64UserAppId": "{{217B4C08-948D-4276-BFBB-BEE930AE5A2C}",
+	"win32arm64UserAppId": "{{69BD8F7B-65EB-4C6F-A14E-44CFA83712C0}",
+	"win32AppUserModelId": "Microsoft.VisualStudioCodeInsiders",
+	"win32ShellNameShort": "Code Insiders",
+	"win32TunnelServiceMutex": "vscodeinsiders-tunnelservice",
+	"win32TunnelMutex": "vscodeinsiders-tunnel",
+	"darwinBundleIdentifier": "com.microsoft.VSCodeInsiders",
+	"darwinProfileUUID": "7CC2F939-3A89-4A22-B9DA-E5B81C0F6C03",
+	"darwinProfilePayloadUUID": "BEA6A398-BD82-4EEC-B626-8464DBB73561",
+	"linuxIconName": "vscode-insiders",
 	"licenseFileName": "LICENSE.txt",
-	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
+	"reportIssueUrl": "https://github.com/Microsoft/vscode/issues/new",
 	"nodejsRepository": "https://nodejs.org",
-	"urlProtocol": "code-oss",
+	"urlProtocol": "vscode-insiders",
 	"agentsTelemetryAppName": "agents",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
 	"builtInExtensions": [
@@ -156,6 +156,52 @@
 			"GitHub.copilot-chat"
 		]
 	},
+	"auth": {
+		"loginUrl": "https://login.microsoftonline.com/common/oauth2/authorize",
+		"tokenUrl": "https://login.microsoftonline.com/common/oauth2/token",
+		"redirectUrl": "https://vscode-redirect.azurewebsites.net/",
+		"clientId": "aebc6443-996d-45c2-90f0-388ff96faa56"
+	},
+	"configurationSync.store": {
+		"url": "https://vscode-sync-insiders.trafficmanager.net/",
+		"stableUrl": "https://vscode-sync.trafficmanager.net/",
+		"insidersUrl": "https://vscode-sync-insiders.trafficmanager.net/",
+		"canSwitch": true,
+		"authenticationProviders": {
+			"github": {
+				"scopes": [
+					"user:email"
+				]
+			},
+			"microsoft": {
+				"scopes": [
+					"openid",
+					"profile",
+					"email",
+					"offline_access"
+				]
+			}
+		}
+	},
+	"editSessions.store": {
+		"url": "https://vscode-sync.trafficmanager.net/",
+		"authenticationProviders": {
+			"microsoft": {
+				"scopes": [
+					"openid",
+					"profile",
+					"email",
+					"offline_access"
+				]
+			},
+			"github": {
+				"scopes": [
+					"user:email"
+				]
+			}
+		}
+	},
+	"enableSyncingProfiles": true,
 	"onboardingKeymaps": [
 		{
 			"id": "vscode",

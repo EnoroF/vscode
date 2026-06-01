@@ -601,10 +601,32 @@ function prepareCopilotRipgrepShimTask(platform: string, arch: string, destinati
 		const appBase = platform === 'darwin'
 			? path.join(outputDir, `${product.nameLong}.app`, 'Contents', 'Resources', 'app')
 			: path.join(outputDir, versionedResourcesFolder, 'resources', 'app');
-		const appNodeModulesDir = path.join(appBase, 'node_modules');
+		const appNodeModulesDir = path.join(appBase, 'node_modules.asar.unpacked');
 
 		const builtInCopilotExtensionDir = path.join(appBase, 'extensions', 'copilot');
 		prepareBuiltInCopilotRipgrepShim(platform, arch, builtInCopilotExtensionDir, appNodeModulesDir);
+	};
+}
+
+function prepareIndexSearchRipgrepOverrideTask(platform: string, arch: string, destinationFolderName: string) {
+	const outputDir = path.join(path.dirname(root), destinationFolderName);
+	const platformArch = `${platform}-${arch}`;
+	const indexSearchRipgrepSourceDir = path.join(root, 'build', 'indexsearch-ripgrep', platformArch);
+
+	return async () => {
+		if (!fs.existsSync(indexSearchRipgrepSourceDir)) {
+			return;
+		}
+
+		const versionedResourcesFolder = util.getVersionedResourcesFolder(platform, commit!);
+		const appBase = platform === 'darwin'
+			? path.join(outputDir, `${product.nameLong}.app`, 'Contents', 'Resources', 'app')
+			: path.join(outputDir, versionedResourcesFolder, 'resources', 'app');
+		const ripgrepDest = path.join(appBase, 'node_modules.asar.unpacked', '@vscode', 'ripgrep-universal', 'bin', platformArch);
+
+		fs.mkdirSync(ripgrepDest, { recursive: true });
+		fs.cpSync(indexSearchRipgrepSourceDir, ripgrepDest, { recursive: true });
+		console.log(`[prepareIndexSearchRipgrepOverride] Replaced ripgrep-universal binaries for ${platformArch}`);
 	};
 }
 
@@ -633,6 +655,7 @@ BUILD_TARGETS.forEach(buildTarget => {
 			compileNativeExtensionsBuildTask,
 			util.rimraf(path.join(buildRoot, destinationFolderName)),
 			packageTask(platform, arch, sourceFolderName, destinationFolderName, opts),
+			prepareIndexSearchRipgrepOverrideTask(platform, arch, destinationFolderName),
 			prepareCopilotRipgrepShimTask(platform, arch, destinationFolderName)
 		];
 

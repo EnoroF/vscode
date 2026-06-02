@@ -1746,6 +1746,11 @@
         "when": "false"
       },
       {
+        "vendor": "codex",
+        "displayName": "Codex",
+        "managementCommand": "github.copilot.codex.manage"
+      },
+      {
         "vendor": "anthropic",
         "displayName": "Anthropic",
         "configuration": {
@@ -2350,6 +2355,10 @@
       {
         "command": "github.copilot.chat.triggerPermissiveSignIn",
         "title": "%github.copilot.command.triggerPermissiveSignIn%"
+      },
+      {
+        "command": "github.copilot.codex.showModels",
+        "title": "Codex: Show Models"
       },
       {
         "command": "copilot.claude.agents",

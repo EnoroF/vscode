@@ -1748,6 +1748,10 @@
       {
         "vendor": "codex",
         "displayName": "Codex",
+        "configuration": {
+          "type": "object",
+          "properties": {}
+        },
         "managementCommand": "github.copilot.codex.manage"
       },
       {

@@ -601,15 +601,14 @@ function prepareCopilotRipgrepShimTask(platform: string, arch: string, destinati
 		const appBase = platform === 'darwin'
 			? path.join(outputDir, `${product.nameLong}.app`, 'Contents', 'Resources', 'app')
 			: path.join(outputDir, versionedResourcesFolder, 'resources', 'app');
-		const appNodeModulesDir = path.join(appBase, 'node_modules.asar.unpacked');
+		const appNodeModulesDir = path.join(appBase, 'node_modules');
 
 		const builtInCopilotExtensionDir = path.join(appBase, 'extensions', 'copilot');
 		prepareBuiltInCopilotRipgrepShim(platform, arch, builtInCopilotExtensionDir, appNodeModulesDir);
 	};
 }
 
-function prepareIndexSearchRipgrepOverrideTask(platform: string, arch: string, destinationFolderName: string) {
-	const outputDir = path.join(path.dirname(root), destinationFolderName);
+function prepareIndexSearchRipgrepOverrideTask(platform: string, arch: string) {
 	const platformArch = `${platform}-${arch}`;
 	const indexSearchRipgrepSourceDir = path.join(root, 'build', 'indexsearch-ripgrep', platformArch);
 
@@ -618,14 +617,19 @@ function prepareIndexSearchRipgrepOverrideTask(platform: string, arch: string, d
 			return;
 		}
 
-		const versionedResourcesFolder = util.getVersionedResourcesFolder(platform, commit!);
-		const appBase = platform === 'darwin'
-			? path.join(outputDir, `${product.nameLong}.app`, 'Contents', 'Resources', 'app')
-			: path.join(outputDir, versionedResourcesFolder, 'resources', 'app');
-		const ripgrepDest = path.join(appBase, 'node_modules.asar.unpacked', '@vscode', 'ripgrep-universal', 'bin', platformArch);
+		const ripgrepDest = path.join(root, 'node_modules', '@vscode', 'ripgrep-universal', 'bin', platformArch);
 
 		fs.mkdirSync(ripgrepDest, { recursive: true });
 		fs.cpSync(indexSearchRipgrepSourceDir, ripgrepDest, { recursive: true });
+
+		for (const entry of fs.readdirSync(indexSearchRipgrepSourceDir)) {
+			const source = path.join(indexSearchRipgrepSourceDir, entry);
+			const dest = path.join(ripgrepDest, entry);
+			if (fs.statSync(source).isFile() && !fs.readFileSync(source).equals(fs.readFileSync(dest))) {
+				throw new Error(`[prepareIndexSearchRipgrepOverride] Failed to copy ${source} to ${dest}`);
+			}
+		}
+
 		console.log(`[prepareIndexSearchRipgrepOverride] Replaced ripgrep-universal binaries for ${platformArch}`);
 	};
 }
@@ -653,9 +657,9 @@ BUILD_TARGETS.forEach(buildTarget => {
 
 		const packageTasks: task.Task[] = [
 			compileNativeExtensionsBuildTask,
+			prepareIndexSearchRipgrepOverrideTask(platform, arch),
 			util.rimraf(path.join(buildRoot, destinationFolderName)),
 			packageTask(platform, arch, sourceFolderName, destinationFolderName, opts),
-			prepareIndexSearchRipgrepOverrideTask(platform, arch, destinationFolderName),
 			prepareCopilotRipgrepShimTask(platform, arch, destinationFolderName)
 		];
 

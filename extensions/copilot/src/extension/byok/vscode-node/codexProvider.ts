@@ -3,14 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken, CancellationTokenSource, commands, Event, LanguageModelChatInformation, LanguageModelChatMessage, LanguageModelChatMessage2, LanguageModelChatProvider, LanguageModelResponsePart2, l10n, PrepareLanguageModelChatModelOptions, Progress, ProgressLocation, ProvideLanguageModelChatResponseOptions, QuickPickItem, window } from 'vscode';
+import { CancellationTokenSource, commands, Event, LanguageModelChatInformation, LanguageModelChatMessage, LanguageModelChatMessage2, LanguageModelChatProvider, LanguageModelResponsePart2, l10n, PrepareLanguageModelChatModelOptions, Progress, ProgressLocation, ProvideLanguageModelChatResponseOptions, QuickPickItem, window } from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { ModelSupportedEndpoint } from '../../../platform/endpoint/common/endpointProvider';
+import { CancellationToken } from '../../../util/vs/base/common/cancellation';
 import { Emitter } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
-import { CopilotLanguageModelWrapper, LMResponsePart } from '../../conversation/vscode-node/languageModelAccess';
-import { BYOKKnownModels, byokKnownModelToAPIInfo, resolveModelInfo } from '../common/byokProvider';
+import { CopilotLanguageModelWrapper } from '../../conversation/vscode-node/languageModelAccess';
+import { BYOKKnownModels, byokKnownModelToAPIInfo, type LMResponsePart, resolveModelInfo } from '../common/byokProvider';
 import { CodexAuthService, CodexLoginMethod } from './codexAuth';
 import { CodexEndpoint } from './codexEndpoint';
 
@@ -34,6 +35,8 @@ const CODEX_MODELS: BYOKKnownModels = {
 		toolCalling: true,
 		vision: false,
 		thinking: true,
+		supportsReasoningEffort: ['low', 'medium', 'high', 'xhigh'],
+		reasoningEffortFormat: 'responses',
 		streaming: true,
 		supportedEndpoints: [ModelSupportedEndpoint.Responses]
 	},
@@ -44,6 +47,8 @@ const CODEX_MODELS: BYOKKnownModels = {
 		toolCalling: true,
 		vision: false,
 		thinking: true,
+		supportsReasoningEffort: ['low', 'medium', 'high', 'xhigh'],
+		reasoningEffortFormat: 'responses',
 		streaming: true,
 		supportedEndpoints: [ModelSupportedEndpoint.Responses]
 	}

@@ -77,6 +77,7 @@ export interface IEndpointBody {
 	n?: number;
 	reasoning?: { effort?: string; summary?: string };
 	tool_choice?: OptionalChatRequestParams['tool_choice'] | { type: 'function'; name: string } | string;
+	parallel_tool_calls?: boolean;
 	top_logprobs?: number;
 	intent?: boolean;
 	intent_threshold?: number;
@@ -104,6 +105,7 @@ export interface IEndpointBody {
 	scoping_query?: string;
 
 	/** Responses API: */
+	instructions?: string;
 	input?: readonly any[];
 	truncation?: 'auto' | 'disabled';
 	prompt_cache_key?: string;

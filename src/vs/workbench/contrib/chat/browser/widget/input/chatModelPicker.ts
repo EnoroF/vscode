@@ -445,11 +445,9 @@ export function buildModelPickerItems(
 
 			const placed = new Set<string>();
 
-			const markPlaced = (identifierOrId: string, metadataId?: string) => {
-				placed.add(identifierOrId);
-				if (metadataId) {
-					placed.add(metadataId);
-				}
+
+			const markPlaced = (identifier: string) => {
+				placed.add(identifier);
 			};
 
 			const resolveModel = (id: string) => allModelsMap.get(id) ?? modelsByMetadataId.get(id);
@@ -468,7 +466,7 @@ export function buildModelPickerItems(
 			// --- 1. Auto ---
 			const autoModel = models.find(m => isAutoModel(m));
 			if (autoModel) {
-				markPlaced(autoModel.identifier, autoModel.metadata.id);
+				markPlaced(autoModel.identifier);
 				const { action: autoAction, ariaDescription: autoAriaDesc } = createModelAction(autoModel, selectedModelId, onSelect, languageModelsService!, undefined, undefined, isUBB);
 				items.push(createModelItem(autoAction, autoModel, openerService, undefined, isUBB, autoAriaDesc));
 			}
@@ -495,7 +493,7 @@ export function buildModelPickerItems(
 				}
 				const model = resolveModel(id);
 				if (model && !placed.has(model.identifier)) {
-					markPlaced(model.identifier, model.metadata.id);
+					markPlaced(model.identifier);
 					pinnedModels.push(model);
 				}
 			}
@@ -527,7 +525,7 @@ export function buildModelPickerItems(
 				}
 				const model = resolveModel(id);
 				if (model && !placed.has(model.identifier)) {
-					markPlaced(model.identifier, model.metadata.id);
+					markPlaced(model.identifier);
 					const entry = controlModels[model.metadata.id];
 					if (entry?.minVSCodeVersion && !isVersionAtLeast(currentVSCodeVersion, entry.minVSCodeVersion)) {
 						promotedItems.push({ kind: 'unavailable', id: model.metadata.id, entry, reason: 'update' });
@@ -567,11 +565,11 @@ export function buildModelPickerItems(
 					if (model && !placed.has(model.identifier)) {
 						if (entry.minVSCodeVersion && !isVersionAtLeast(currentVSCodeVersion, entry.minVSCodeVersion)) {
 							if (showUnavailableFeatured) {
-								markPlaced(model.identifier, model.metadata.id);
+								markPlaced(model.identifier);
 								promotedItems.push({ kind: 'unavailable', id: entryId, entry, reason: 'update' });
 							}
 						} else {
-							markPlaced(model.identifier, model.metadata.id);
+							markPlaced(model.identifier);
 							promotedItems.push({ kind: 'available', model });
 						}
 					} else if (!model && !entry.exists) {
@@ -615,7 +613,7 @@ export function buildModelPickerItems(
 			}
 
 			// --- 3. Other Models (collapsible, grouped by provider group) ---
-			otherModels = models.filter(m => !placed.has(m.identifier) && !placed.has(m.metadata.id));
+			otherModels = models.filter(m => !placed.has(m.identifier));
 
 			if (otherModels.length > 0) {
 				if (items.length > 0) {

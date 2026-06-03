@@ -681,6 +681,35 @@ suite('buildModelPickerItems', () => {
 		assert.strictEqual(actions[1].label, 'Claude');
 	});
 
+	test('recently used metadata id does not hide same model id from another provider', () => {
+		const auto = createAutoModel();
+		const copilotGpt55 = createModel('gpt-5.5', 'GPT-5.5', 'copilot');
+		const customGpt55 = createModel('gpt-5.5', 'GPT-5.5', 'customoai');
+		const lmService = createLanguageModelsServiceStub([
+			{
+				vendor: 'copilot',
+				displayName: 'Copilot',
+				groups: [{ name: 'Copilot', modelIdentifiers: [copilotGpt55.identifier] }],
+			},
+			{
+				vendor: 'customoai',
+				displayName: 'OpenAI Compatible',
+				groups: [{ name: 'OpenAI Compatible', modelIdentifiers: [customGpt55.identifier] }],
+			},
+		]);
+
+		const items = callBuild([auto, copilotGpt55, customGpt55], {
+			recentModelIds: ['gpt-5.5'],
+			languageModelsService: lmService,
+		});
+		const gptItems = getActionItems(items).filter(a => a.label === 'GPT-5.5');
+
+		assert.deepStrictEqual(gptItems.map(i => ({ id: i.item?.id, section: i.section, badge: i.badge })), [
+			{ id: copilotGpt55.identifier, section: undefined, badge: 'Copilot' },
+			{ id: customGpt55.identifier, section: 'other', badge: undefined },
+		]);
+	});
+
 	test('multiple featured and recent models all promoted correctly', () => {
 		const auto = createAutoModel();
 		const modelA = createModel('alpha', 'Alpha');
@@ -1038,6 +1067,22 @@ suite('buildModelPickerItems', () => {
 		// GPT-4o should only appear once (in pinned, not again in promoted)
 		const gptItems = actions.filter(a => a.label === 'GPT-4o');
 		assert.strictEqual(gptItems.length, 1, 'Pinned model should appear exactly once');
+	});
+
+	test('pinned model does not hide same model id from another provider', () => {
+		const auto = createAutoModel();
+		const copilotGpt55 = createModel('gpt-5.5', 'GPT-5.5', 'copilot');
+		const customGpt55 = createModel('gpt-5.5', 'GPT-5.5', 'customoai');
+
+		const items = callBuild([auto, copilotGpt55, customGpt55], {
+			pinnedModelIds: [copilotGpt55.identifier],
+		});
+		const gptItems = getActionItems(items).filter(a => a.label === 'GPT-5.5');
+
+		assert.deepStrictEqual(gptItems.map(i => ({ id: i.item?.id, section: i.section })), [
+			{ id: copilotGpt55.identifier, section: undefined },
+			{ id: customGpt55.identifier, section: 'other' },
+		]);
 	});
 
 	test('MRU is capped at 3 after filtering pinned models', () => {

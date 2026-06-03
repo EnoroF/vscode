@@ -79,9 +79,7 @@ export class CodexLMProvider extends Disposable implements LanguageModelChatProv
 		this._lmWrapper = this._instantiationService.createInstance(CopilotLanguageModelWrapper);
 		this._register(this._authService.onDidChangeCredentials(() => this._onDidChangeLanguageModelChatInformation.fire()));
 		this._register(commands.registerCommand(MANAGE_CODEX_COMMAND_ID, async () => {
-			if (await this._promptLogin()) {
-				this._onDidChangeLanguageModelChatInformation.fire();
-			}
+			await this._manageCodex();
 		}));
 		this._register(commands.registerCommand(SHOW_CODEX_MODELS_COMMAND_ID, async () => {
 			const models = this._getLanguageModelChatInformation();
@@ -148,6 +146,30 @@ export class CodexLMProvider extends Disposable implements LanguageModelChatProv
 		}
 		const modelInfo = resolveModelInfo(modelId, PROVIDER_NAME, CODEX_MODELS);
 		return this._instantiationService.createInstance(CodexEndpoint, modelInfo, credentials.access, credentials.accountId, CODEX_RESPONSES_URL);
+	}
+
+	private async _manageCodex(): Promise<void> {
+		if (!await this._authService.isSignedIn()) {
+			if (await this._promptLogin()) {
+				this._onDidChangeLanguageModelChatInformation.fire();
+			}
+			return;
+		}
+
+		const signOutItem: QuickPickItem = { label: l10n.t('Sign Out'), detail: l10n.t('Remove the saved Codex credentials') };
+		const reauthenticateItem: QuickPickItem = { label: l10n.t('Reauthenticate'), detail: l10n.t('Remove the saved Codex credentials and sign in again') };
+		const picked = await window.showQuickPick([reauthenticateItem, signOutItem], {
+			title: l10n.t('Manage Codex'),
+			placeHolder: l10n.t('Choose a Codex authentication action')
+		});
+		if (!picked) {
+			return;
+		}
+
+		await this._authService.signOut();
+		if (picked === reauthenticateItem && await this._promptLogin()) {
+			this._onDidChangeLanguageModelChatInformation.fire();
+		}
 	}
 
 	private async _promptLogin(): Promise<boolean> {

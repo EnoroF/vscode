@@ -61,6 +61,7 @@ const CODEX_MODELS: BYOKKnownModels = {
  * flow; the access token is refreshed transparently on each request.
  */
 export class CodexLMProvider extends Disposable implements LanguageModelChatProvider {
+	public static readonly providerId = PROVIDER_ID;
 	public static readonly providerName = PROVIDER_NAME;
 
 	private readonly _authService: CodexAuthService;

@@ -55,7 +55,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 		const openai = instantiationService.createInstance(OAIBYOKLMProvider, {}, this._byokStorageService);
 
 		this._providers.set(OllamaLMProvider.providerId, instantiationService.createInstance(OllamaLMProvider, this._byokStorageService));
-		this._providers.set('codex', this._register(instantiationService.createInstance(CodexLMProvider)));
+		this._providers.set(CodexLMProvider.providerId, this._register(instantiationService.createInstance(CodexLMProvider)));
 		this._providers.set(AnthropicLMProvider.providerId, anthropic);
 		this._providers.set(GeminiNativeBYOKLMProvider.providerId, gemini);
 		this._providers.set(XAIBYOKLMProvider.providerId, xai);

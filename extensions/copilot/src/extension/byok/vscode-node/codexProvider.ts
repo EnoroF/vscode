@@ -29,7 +29,7 @@ const CODEX_RESPONSES_URL = 'https://chatgpt.com/backend-api/codex/responses';
  */
 const CODEX_MODELS: BYOKKnownModels = {
 	'gpt-5.5': {
-		name: 'GPT-5.5 (Codex)',
+		name: 'GPT-5.5',
 		maxInputTokens: 256_000,
 		maxOutputTokens: 64_000,
 		toolCalling: true,
@@ -41,7 +41,7 @@ const CODEX_MODELS: BYOKKnownModels = {
 		supportedEndpoints: [ModelSupportedEndpoint.Responses]
 	},
 	'gpt-5.4': {
-		name: 'GPT-5.4 (Codex)',
+		name: 'GPT-5.4',
 		maxInputTokens: 256_000,
 		maxOutputTokens: 64_000,
 		toolCalling: true,

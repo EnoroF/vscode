@@ -21,6 +21,14 @@
 	"win32arm64AppId": "{{91A97582-E6AC-43A6-A066-D41675961443}",
 	"win32x64UserAppId": "{{532AFEF5-FC71-4430-9548-1005537B0774}",
 	"win32arm64UserAppId": "{{8FA8FDF6-0677-4132-B3A2-27339D774BC7}",
+	"win32ContextMenu": {
+		"x64": {
+			"clsid": "{8FAF6D39-F677-4921-872D-17DC674F9BBB}"
+		},
+		"arm64": {
+			"clsid": "{3636B855-8CCD-491D-B755-6E8174522368}"
+		}
+	},
 	"win32AppUserModelId": "Microsoft.VisualStudioCodeInsiders",
 	"win32ShellNameShort": "Code Insiders",
 	"win32TunnelServiceMutex": "vscodeoss-tunnelservice",
@@ -34,6 +42,7 @@
 	"nodejsRepository": "https://nodejs.org",
 	"urlProtocol": "vscode-insiders",
 	"agentsTelemetryAppName": "agents",
+	"quality": "insider",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
 	"builtInExtensions": [
 		{

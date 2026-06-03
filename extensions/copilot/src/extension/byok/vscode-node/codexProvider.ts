@@ -84,13 +84,14 @@ export class CodexLMProvider extends Disposable implements LanguageModelChatProv
 			}
 		}));
 		this._register(commands.registerCommand(SHOW_CODEX_MODELS_COMMAND_ID, async () => {
-			const models = await this.provideLanguageModelChatInformation({ silent: false }, CancellationToken.None);
+			const models = this._getLanguageModelChatInformation();
 			this._onDidChangeLanguageModelChatInformation.fire();
 			void window.showInformationMessage(l10n.t('Codex returned {0} model(s): {1}', models.length, models.map(model => model.name).join(', ')));
 		}));
 	}
 
 	async provideLanguageModelChatInformation(options: PrepareLanguageModelChatModelOptions, _token: CancellationToken): Promise<LanguageModelChatInformation[]> {
+		const isProviderGroupResolution = options.configuration !== undefined;
 		const signedIn = await this._authService.isSignedIn();
 		this._logService.info(`Codex: resolving language models (silent=${options.silent}, signedIn=${signedIn}).`);
 		if (!signedIn) {
@@ -105,10 +106,17 @@ export class CodexLMProvider extends Disposable implements LanguageModelChatProv
 		if (!options.silent) {
 			await this._ensureConfiguredGroup();
 		}
+		if (!isProviderGroupResolution) {
+			return [];
+		}
 
-		const models = Object.entries(CODEX_MODELS).map(([id, capabilities]) => byokKnownModelToAPIInfo(PROVIDER_NAME, id, capabilities));
+		const models = this._getLanguageModelChatInformation();
 		this._logService.info(`Codex: providing ${models.length} language model(s).`);
 		return models;
+	}
+
+	private _getLanguageModelChatInformation(): LanguageModelChatInformation[] {
+		return Object.entries(CODEX_MODELS).map(([id, capabilities]) => byokKnownModelToAPIInfo(PROVIDER_NAME, id, capabilities));
 	}
 
 	private async _ensureConfiguredGroup(): Promise<void> {

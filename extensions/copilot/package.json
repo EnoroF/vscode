@@ -1751,8 +1751,7 @@
         "configuration": {
           "type": "object",
           "properties": {}
-        },
-        "managementCommand": "github.copilot.codex.manage"
+        }
       },
       {
         "vendor": "anthropic",

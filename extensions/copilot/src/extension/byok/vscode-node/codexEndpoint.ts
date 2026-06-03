@@ -20,6 +20,11 @@ const CODEX_OPENAI_BETA = 'responses=experimental';
 /** Originator identifier sent to the Codex backend. */
 const CODEX_ORIGINATOR = 'vscode-copilot';
 
+type CodexEndpointBody = IEndpointBody & {
+	instructions?: string;
+	parallel_tool_calls?: boolean;
+};
+
 /**
  * Chat endpoint for the OpenAI Codex (ChatGPT) backend.
  *
@@ -82,27 +87,28 @@ export class CodexEndpoint extends OpenAIEndpoint {
 }
 
 function customizeCodexResponsesBody(body: IEndpointBody): IEndpointBody {
-	body.instructions = extractCodexInstructions(body.input) ?? body.instructions ?? '';
+	const codexBody = body as CodexEndpointBody;
+	codexBody.instructions = extractCodexInstructions(codexBody.input) ?? codexBody.instructions ?? '';
 	// The Codex backend is stateless: it does not persist responses and
 	// requires the encrypted reasoning content to be echoed back.
-	body.store = false;
-	body.include = ['reasoning.encrypted_content'];
-	delete body.max_output_tokens;
-	delete body.previous_response_id;
-	delete body.truncation;
-	delete body.context_management;
-	delete body.top_logprobs;
-	delete body.n;
-	delete body.stream_options;
-	delete body.reasoning_effort;
-	body.tool_choice ??= 'auto';
-	body.parallel_tool_calls = true;
-	body.text ??= { verbosity: 'low' };
-	body.input = sanitizeCodexInput(body.input);
-	if (body.prompt_cache_key && body.prompt_cache_key.length > 64) {
-		body.prompt_cache_key = body.prompt_cache_key.slice(0, 64);
+	codexBody.store = false;
+	codexBody.include = ['reasoning.encrypted_content'];
+	delete codexBody.max_output_tokens;
+	delete codexBody.previous_response_id;
+	delete codexBody.truncation;
+	delete codexBody.context_management;
+	delete codexBody.top_logprobs;
+	delete codexBody.n;
+	delete codexBody.stream_options;
+	delete codexBody.reasoning_effort;
+	codexBody.tool_choice ??= 'auto';
+	codexBody.parallel_tool_calls = true;
+	codexBody.text ??= { verbosity: 'low' };
+	codexBody.input = sanitizeCodexInput(codexBody.input);
+	if (codexBody.prompt_cache_key && codexBody.prompt_cache_key.length > 64) {
+		codexBody.prompt_cache_key = codexBody.prompt_cache_key.slice(0, 64);
 	}
-	return body;
+	return codexBody;
 }
 
 function sanitizeCodexInput(input: readonly unknown[] | undefined): readonly unknown[] | undefined {

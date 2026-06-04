@@ -20,7 +20,7 @@ import { ISessionsPartService } from '../../../browser/parts/sessionsPartService
 import { SessionStatus } from '../../../services/sessions/common/session.js';
 import { writeStoredSessionTypePref } from '../browser/sessionTypePicker.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
-import { ChatExternalEditorOpenerContribution } from '../../../../workbench/contrib/chat/electron-browser/chatExternalEditorOpener.js';
+import { ChatExternalEditorOpenerContribution, ExternalEditorConfigurationContribution } from '../../../../workbench/contrib/chat/electron-browser/chatExternalEditorOpener.js';
 
 class SelectAgentsFolderContribution extends Disposable implements IWorkbenchContribution {
 
@@ -288,3 +288,4 @@ class SelectAgentsFolderContribution extends Disposable implements IWorkbenchCon
 
 registerWorkbenchContribution2(SelectAgentsFolderContribution.ID, SelectAgentsFolderContribution, WorkbenchPhase.BlockStartup);
 registerWorkbenchContribution2(ChatExternalEditorOpenerContribution.ID, ChatExternalEditorOpenerContribution, WorkbenchPhase.AfterRestored);
+registerWorkbenchContribution2(ExternalEditorConfigurationContribution.ID, ExternalEditorConfigurationContribution, WorkbenchPhase.AfterRestored);

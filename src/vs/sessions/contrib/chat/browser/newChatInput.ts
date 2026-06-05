@@ -503,7 +503,6 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 		const toolbar = dom.append(container, dom.$('.sessions-chat-toolbar'));
 
 		this._createAttachButton(toolbar);
-		this._createToolsButton(toolbar);
 
 		// Session config pickers (mode, model) — rendered via MenuWorkbenchToolBar
 		// Visibility controlled by context keys (isActiveSessionBackgroundProvider, isNewChatSession)
@@ -511,6 +510,7 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 		this._register(this._modelPickerInstantiationService.createInstance(MenuWorkbenchToolBar, configContainer, Menus.NewSessionConfig, {
 			hiddenItemStrategy: HiddenItemStrategy.NoHide,
 		}));
+		this._createToolsButton(configContainer);
 
 		dom.append(toolbar, dom.$('.sessions-chat-toolbar-spacer'));
 

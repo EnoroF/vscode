@@ -17,7 +17,7 @@ import { ILogService } from '../../../../platform/log/common/log.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { renderIcon } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
 import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
-import { NewChatInputWidget } from './newChatInput.js';
+import { INewChatInputSendRequest, NewChatInputWidget } from './newChatInput.js';
 import { IChatRequestVariableEntry } from '../../../../workbench/contrib/chat/common/attachments/chatVariableEntries.js';
 
 // #region --- New Chat In Session Widget ---
@@ -51,7 +51,7 @@ export class NewChatInSessionWidget extends Disposable {
 
 		this._newChatInput = this._register(this.instantiationService.createInstance(NewChatInputWidget, {
 			getContextFolderUri: () => this._getContextFolderUri(),
-			sendRequest: async ({ query, attachments }) => this._send(query, attachments),
+			sendRequest: async ({ query, attachments, userSelectedTools }) => this._send(query, attachments, userSelectedTools),
 			canSendRequest,
 			loading,
 			historyKey: derived(reader => this.sessionsManagementService.activeSession.read(reader)?.sessionId),
@@ -129,14 +129,14 @@ export class NewChatInSessionWidget extends Disposable {
 
 	// --- Send ---
 
-	private async _send(query: string, attachedContext?: IChatRequestVariableEntry[]): Promise<void> {
+	private async _send(query: string, attachedContext?: IChatRequestVariableEntry[], userSelectedTools?: INewChatInputSendRequest['userSelectedTools']): Promise<void> {
 		const activeSession = this.sessionsManagementService.activeSession.get();
 		if (!activeSession) {
 			return;
 		}
 		const activeChat = activeSession.activeChat.get();
 		try {
-			await this.sessionsManagementService.sendRequest(activeSession, activeChat, { query, attachedContext });
+			await this.sessionsManagementService.sendRequest(activeSession, activeChat, { query, attachedContext, userSelectedTools });
 		} catch (e) {
 			this.logService.error('Failed to send secondary chat request:', e);
 		}

@@ -1022,6 +1022,9 @@ export class LocalChatSessionsProvider extends Disposable implements ISessionsPr
 		} : undefined;
 
 		const permissionLevel = session.permissionLevel.get();
+		const languageModel = session.selectedModelId ? this.languageModelsService.lookupLanguageModel(session.selectedModelId) : undefined;
+		const enabledTools = modeKind === ChatModeKind.Agent ? Object.fromEntries(Array.from(this.toolsService.getTools(languageModel)).filter(tool => tool.canBeReferencedInPrompt).map(tool => [tool.id, true])) : undefined;
+		const requestTools = options.userSelectedTools ?? enabledTools;
 
 		const sendOptions: IChatSendRequestOptions = {
 			location: ChatAgentLocation.Chat,
@@ -1035,6 +1038,11 @@ export class LocalChatSessionsProvider extends Disposable implements ISessionsPr
 				permissionLevel,
 			},
 			attachedContext,
+			userSelectedTools: requestTools ? constObservable(requestTools) : undefined,
+			instructionContext: {
+				modeKind,
+				enabledTools: requestTools,
+			},
 		};
 
 		// Set model/mode/permission state on the chat model before sending

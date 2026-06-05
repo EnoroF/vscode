@@ -2112,6 +2112,10 @@ export class CopilotChatSessionsProvider extends Disposable implements ISessions
 		const { query, attachedContext } = options;
 
 		const contribution = this.chatSessionsService.getChatSessionContribution(newChatSession.target);
+		const autoAttachEnabled = contribution ? contribution.autoAttachReferences === true : true;
+		const languageModel = newChatSession.selectedModelId ? this.languageModelsService.lookupLanguageModel(newChatSession.selectedModelId) : undefined;
+		const enabledTools = Object.fromEntries(Array.from(this.toolsService.getTools(languageModel)).filter(tool => tool.canBeReferencedInPrompt).map(tool => [tool.id, true]));
+		const requestTools = options.userSelectedTools ?? enabledTools;
 
 		const sendOptions: IChatSendRequestOptions = {
 			location: ChatAgentLocation.Chat,
@@ -2127,6 +2131,11 @@ export class CopilotChatSessionsProvider extends Disposable implements ISessions
 			agentIdSilent: contribution?.type,
 			attachedContext,
 			agentHostSessionConfig: newChatSession.getAgentHostSessionConfig(),
+			userSelectedTools: constObservable(requestTools),
+			instructionContext: autoAttachEnabled ? {
+				modeKind: ChatModeKind.Agent,
+				enabledTools: requestTools,
+			} : undefined,
 		};
 
 		const ref = await this._updateChatSessionState(newChatSession.resource, newChatSession);

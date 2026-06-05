@@ -36,6 +36,7 @@ import { IChatSendRequestOptions, IChatService } from '../../../../../workbench/
 import { IChatSessionFileChange, IChatSessionFileChange2, IChatSessionsService } from '../../../../../workbench/contrib/chat/common/chatSessionsService.js';
 import { ChatAgentLocation, ChatConfiguration, ChatModeKind, ChatPermissionLevel } from '../../../../../workbench/contrib/chat/common/constants.js';
 import { ILanguageModelChatMetadataAndIdentifier, ILanguageModelsService } from '../../../../../workbench/contrib/chat/common/languageModels.js';
+import { ILanguageModelToolsService } from '../../../../../workbench/contrib/chat/common/tools/languageModelToolsService.js';
 import { buildMutableConfigSchema, IAgentHostSessionsProvider, resolvedConfigsEqual } from '../../../../common/agentHostSessionsProvider.js';
 import { agentHostSessionWorkspaceKey } from '../../../../common/agentHostSessionWorkspace.js';
 import { isSessionConfigComplete } from '../../../../common/sessionConfig.js';
@@ -1185,6 +1186,7 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 		@IChatService protected readonly _chatService: IChatService,
 		@IChatWidgetService protected readonly _chatWidgetService: IChatWidgetService,
 		@ILanguageModelsService protected readonly _languageModelsService: ILanguageModelsService,
+		@ILanguageModelToolsService protected readonly _languageModelToolsService: ILanguageModelToolsService,
 		@IConfigurationService protected readonly _baseConfigurationService: IConfigurationService,
 		@ILogService protected readonly _logService: ILogService,
 		@IGitHubService protected readonly _gitHubService: IGitHubService,
@@ -1961,6 +1963,10 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 
 		const sessionType = chatResource.scheme;
 		const contribution = this._chatSessionsService.getChatSessionContribution(sessionType);
+		const autoAttachEnabled = contribution ? contribution.autoAttachReferences === true : true;
+		const languageModel = selectedModelId ? this._languageModelsService.lookupLanguageModel(selectedModelId) : undefined;
+		const enabledTools = Object.fromEntries(Array.from(this._languageModelToolsService.getTools(languageModel)).filter(tool => tool.canBeReferencedInPrompt).map(tool => [tool.id, true]));
+		const requestTools = options.userSelectedTools ?? enabledTools;
 
 		const sendOptions: IChatSendRequestOptions = {
 			location: ChatAgentLocation.Chat,
@@ -1988,6 +1994,11 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 			agentIdSilent: contribution?.type,
 			attachedContext,
 			agentHostSessionConfig: this.getCreateSessionConfig(chatId),
+			userSelectedTools: constObservable(requestTools),
+			instructionContext: autoAttachEnabled ? {
+				modeKind: ChatModeKind.Agent,
+				enabledTools: requestTools,
+			} : undefined,
 		};
 
 		// Chat session model was already created by createNewChat and

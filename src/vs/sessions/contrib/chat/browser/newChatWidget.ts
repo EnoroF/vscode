@@ -18,7 +18,7 @@ import { IWorkspaceTrustRequestService } from '../../../../platform/workspace/co
 import { WorkspacePicker } from './sessionWorkspacePicker.js';
 import { WebWorkspacePicker } from './webWorkspacePicker.js';
 import { IPreferredSessionType } from './sessionTypePicker.js';
-import { NewChatInputWidget } from './newChatInput.js';
+import { INewChatInputSendRequest, NewChatInputWidget } from './newChatInput.js';
 import { NoAgentHostEmptyState } from './noAgentHostEmptyState.js';
 import { IChatRequestVariableEntry } from '../../../../workbench/contrib/chat/common/attachments/chatVariableEntries.js';
 import { IAgentHostFilterService } from '../../../services/agentHostFilter/common/agentHostFilter.js';
@@ -74,7 +74,7 @@ export class NewChatWidget extends Disposable {
 
 		this._newChatInput = this._register(this.instantiationService.createInstance(NewChatInputWidget, {
 			getContextFolderUri: () => this._getContextFolderUri(),
-			sendRequest: async ({ query, attachments, background }) => this._send(query, attachments, background),
+			sendRequest: async ({ query, attachments, background, userSelectedTools }) => this._send(query, attachments, background, userSelectedTools),
 			canSendRequest,
 			loading,
 			historyKey: derived(reader => this.sessionsManagementService.activeSession.read(reader)?.sessionId),
@@ -331,7 +331,7 @@ export class NewChatWidget extends Disposable {
 
 	// --- Send ---
 
-	private async _send(query: string, attachedContext?: IChatRequestVariableEntry[], background?: boolean): Promise<void> {
+	private async _send(query: string, attachedContext?: IChatRequestVariableEntry[], background?: boolean, userSelectedTools?: INewChatInputSendRequest['userSelectedTools']): Promise<void> {
 		const session = this.sessionsManagementService.activeSession.get();
 		if (!session) {
 			this._workspacePicker.showPicker();
@@ -346,7 +346,7 @@ export class NewChatWidget extends Disposable {
 		const reseedPick = background ? this._newChatInput.sessionTypePicker.selectedPick : undefined;
 
 		try {
-			await this.sessionsManagementService.sendNewChatRequest(session, { query, attachedContext, background });
+			await this.sessionsManagementService.sendNewChatRequest(session, { query, attachedContext, background, userSelectedTools });
 		} catch (e) {
 			this.logService.error('Failed to send request:', e);
 		}

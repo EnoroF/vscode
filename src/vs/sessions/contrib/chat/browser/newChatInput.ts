@@ -51,12 +51,16 @@ import { IChatModelInputState } from '../../../../workbench/contrib/chat/common/
 import { IChatRequestVariableEntry, isExplicitFileOrImageVariableEntry } from '../../../../workbench/contrib/chat/common/attachments/chatVariableEntries.js';
 import { ChatAgentLocation, ChatModeKind } from '../../../../workbench/contrib/chat/common/constants.js';
 import { ChatHistoryNavigator } from '../../../../workbench/contrib/chat/common/widget/chatWidgetHistoryService.js';
+import { UserSelectedTools } from '../../../../workbench/contrib/chat/common/participants/chatAgents.js';
 import { IHistoryNavigationWidget } from '../../../../base/browser/history.js';
 import { registerAndCreateHistoryNavigationContext, IHistoryNavigationContext } from '../../../../platform/history/browser/contextScopedHistoryWidget.js';
-import { autorun, IObservable } from '../../../../base/common/observable.js';
+import { autorun, constObservable, IObservable } from '../../../../base/common/observable.js';
 import { ChatInputNotificationWidget } from '../../../../workbench/contrib/chat/browser/widget/input/chatInputNotificationWidget.js';
 import { INewChatModelPickerService, NewChatModelPickerService } from './newChatModelPicker.js';
 import { AGENT_SESSIONS_SCOPED_INPUT_HISTORY_SETTING } from './sessionsChatHistory.js';
+import { ChatSelectedTools } from '../../../../workbench/contrib/chat/browser/widget/input/chatSelectedTools.js';
+import { showToolsPicker } from '../../../../workbench/contrib/chat/browser/actions/chatToolPicker.js';
+import { ChatMode } from '../../../../workbench/contrib/chat/common/chatModes.js';
 
 
 const STORAGE_KEY_DRAFT_STATE = 'sessions.draftState';
@@ -76,6 +80,7 @@ export interface INewChatInputSendRequest {
 	readonly query: string;
 	readonly attachments?: IChatRequestVariableEntry[];
 	readonly background?: boolean;
+	readonly userSelectedTools?: UserSelectedTools;
 }
 
 /**
@@ -138,6 +143,7 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 
 	// Attached context
 	private readonly _contextAttachments: NewChatContextAttachments;
+	private readonly _selectedToolsModel: ChatSelectedTools;
 
 	// Slash commands
 	private _slashCommandHandler: SlashCommandHandler | undefined;
@@ -177,6 +183,7 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 	) {
 		super();
+		this._selectedToolsModel = this._register(this.instantiationService.createInstance(ChatSelectedTools, constObservable(ChatMode.Agent), constObservable(undefined)));
 		this._modelPickerInstantiationService = this._register(this.instantiationService.createChild(new ServiceCollection(
 			[INewChatModelPickerService, new NewChatModelPickerService()],
 		)));
@@ -467,10 +474,36 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 		}));
 	}
 
+	private _createToolsButton(container: HTMLElement): void {
+		const toolsButton = dom.append(container, dom.$('.sessions-chat-attach-button'));
+		const toolsButtonLabel = localize('configureTools', "Configure Tools...");
+		toolsButton.tabIndex = 0;
+		toolsButton.role = 'button';
+		toolsButton.ariaLabel = toolsButtonLabel;
+		this._register(this.hoverService.setupDelayedHover(toolsButton, { content: toolsButtonLabel, position: { hoverPosition: HoverPosition.BELOW }, appearance: { showPointer: true } }));
+		dom.append(toolsButton, renderIcon(Codicon.tools));
+		this._register(dom.addDisposableListener(toolsButton, dom.EventType.CLICK, () => this._showToolsPicker()));
+		this._register(dom.addDisposableListener(toolsButton, dom.EventType.KEY_DOWN, e => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				e.stopPropagation();
+				this._showToolsPicker();
+			}
+		}));
+	}
+
+	private async _showToolsPicker(): Promise<void> {
+		const result = await this.instantiationService.invokeFunction(accessor => showToolsPicker(accessor, localize('configureTools.placeholder', "Select tools that are available to chat"), 'new-session-configure-tools', undefined, () => this._selectedToolsModel.entriesMap.get(), undefined));
+		if (result) {
+			this._selectedToolsModel.set(result, false);
+		}
+	}
+
 	private _createInputToolbar(container: HTMLElement): void {
 		const toolbar = dom.append(container, dom.$('.sessions-chat-toolbar'));
 
 		this._createAttachButton(toolbar);
+		this._createToolsButton(toolbar);
 
 		// Session config pickers (mode, model) — rendered via MenuWorkbenchToolBar
 		// Visibility controlled by context keys (isActiveSessionBackgroundProvider, isNewChatSession)
@@ -590,7 +623,7 @@ export class NewChatInputWidget extends Disposable implements IHistoryNavigation
 		this._updateInputLoadingState();
 
 		try {
-			await this.options.sendRequest({ query: request, attachments: attachedContext, background });
+			await this.options.sendRequest({ query: request, attachments: attachedContext, background, userSelectedTools: this._selectedToolsModel.userSelectedTools.get() });
 			this._contextAttachments.clear();
 			this._editor.getModel()?.setValue('');
 		} catch (e) {

@@ -34,7 +34,6 @@ import { ACTION_ID_NEW_CHAT, CHAT_OPEN_ACTION_ID, IChatViewOpenOptions } from '.
 import { AgentHostContribution } from '../browser/agentSessions/agentHost/agentHostChatContribution.js';
 import { AgentHostTerminalContribution } from '../browser/agentSessions/agentHost/agentHostTerminalContribution.js';
 import { AgentSessionProviders, getAgentSessionProviderName } from '../browser/agentSessions/agentSessions.js';
-import { isSessionInProgressStatus } from '../browser/agentSessions/agentSessionsModel.js';
 import { IAgentSessionsService } from '../browser/agentSessions/agentSessionsService.js';
 import { ChatViewPaneTarget, IChatWidgetService } from '../browser/chat.js';
 import { ChatSessionPosition, openChatSession } from '../browser/chatSessions/chatSessions.contribution.js';
@@ -48,6 +47,7 @@ import { registerChatDeveloperActions } from './actions/chatDeveloperActions.js'
 import { registerChatExportZipAction } from './actions/chatExportZip.js';
 import { registerExportAgentTracesDbAction } from './actions/exportAgentTracesDb.js';
 import { ChatExternalEditorOpenerContribution, ExternalEditorConfigurationContribution } from './chatExternalEditorOpener.js';
+import { shouldWarnForSessionShutdown } from './chatLifecycle.js';
 import { HoldToVoiceChatInChatViewAction, InlineVoiceChatAction, KeywordActivationContribution, QuickVoiceChatAction, ReadChatResponseAloud, StartVoiceChatAction, StopListeningAction, StopListeningAndSubmitAction, StopReadAloud, StopReadChatItemAloud, VoiceChatInChatViewAction } from './actions/voiceChatActions.js';
 import { OpenWorkspaceInAgentsWindowAction, OpenWorkspaceInAgentsContribution, OpenAgentsWindowAction, OpenChatSessionInAgentsWindowAction, AgentsHandoffInputTipContribution, ToggleOpenInAgentsWindowTitleBarAction } from './agentSessions/agentSessionsActions.js';
 import { NativeBuiltinToolsContribution } from './builtInTools/tools.js';
@@ -174,20 +174,16 @@ class ChatLifecycleHandler extends Disposable {
 		}));
 
 		this._register(extensionService.onWillStop(e => {
-			e.veto(this.hasNonCloudSessionInProgress(), localize('chatRequestInProgress', "A session is in progress."));
+			e.veto(this.hasSessionThatWillStop(ShutdownReason.CLOSE), localize('chatRequestInProgress', "A session is in progress."));
 		}));
 	}
 
-	private hasNonCloudSessionInProgress(): boolean {
+	private hasSessionThatWillStop(reason: ShutdownReason): boolean {
 		if (this.chatEntitlementService.sentiment.hidden) {
 			return false; // AI features are disabled
 		}
 
-		return this.agentSessionsService.model.sessions.some(session =>
-			isSessionInProgressStatus(session.status) &&
-			session.providerType !== AgentSessionProviders.Cloud &&
-			!session.isArchived()
-		);
+		return this.agentSessionsService.model.sessions.some(session => shouldWarnForSessionShutdown(session, reason));
 	}
 
 	private shouldVetoShutdown(reason: ShutdownReason): boolean | Promise<boolean> {
@@ -195,7 +191,7 @@ class ChatLifecycleHandler extends Disposable {
 			return false;
 		}
 
-		if (!this.hasNonCloudSessionInProgress()) {
+		if (!this.hasSessionThatWillStop(reason)) {
 			return false;
 		}
 
